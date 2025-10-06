@@ -39,10 +39,203 @@
   Seine Kunst wird als unterhaltsam und gleichzeitig kritisch gelesen.</p>
 </main>
 
+
+<section>
+  <hr>
+  <h2>Hintergrund: Integration einer bestehenden React-Komponente (shadcn / Tailwind / TypeScript)</h2>
+  <p>Du bist damit beauftragt, eine bestehende React-Komponente in eine Codebasis zu integrieren. Die Codebasis soll folgende Anforderungen unterstützen:</p>
+  <ul>
+    <li>shadcn-Projektstruktur</li>
+    <li>Tailwind CSS</li>
+    <li>TypeScript</li>
+  </ul>
+  <p>Falls die Basis das nicht unterstützt, befolge die Setup-Schritte unten (shadcn CLI, Tailwind, TypeScript). Bestimme außerdem den Standardpfad für Komponenten und Styles. Liegt der Default-Pfad <strong>nicht</strong> unter <code>/components/ui</code>, lege diesen Ordner an und begründe kurz, warum die Bündelung dort sinnvoll ist (klare Importe, Konsistenz, einfache Migration).</p>
+
+  <h3>Komponente unter <code>/components/ui</code> ablegen</h3>
+  <p>Kopiere folgende Dateien in den Ordner <code>/components/ui</code>:</p>
+  <pre><code>aurora-background.tsx
+&quot;use client&quot;;
+import &#123; cn &#125; from &quot;@/lib/utils&quot;;
+import React, &#123; ReactNode &#125; from &quot;react&quot;;
+
+interface AuroraBackgroundProps extends React.HTMLProps&lt;HTMLDivElement&gt; &#123;
+  children: ReactNode;
+  showRadialGradient?: boolean;
+&#125;
+
+export const AuroraBackground = (&#123;
+  className,
+  children,
+  showRadialGradient = true,
+  ...props
+&#125;: AuroraBackgroundProps) =&gt; &#123;
+  return (
+    &lt;main&gt;
+      &lt;div
+        className=&#123;cn(
+          &quot;relative flex flex-col  h-[100vh] items-center justify-center bg-zinc-50 dark:bg-zinc-900  text-slate-950 transition-bg&quot;,
+          className
+        )&#125;
+        &#123;...props&#125;
+      &gt;
+        &lt;div className=&quot;absolute inset-0 overflow-hidden&quot;&gt;
+          &lt;div
+            className=&#123;cn(
+              &#96;
+            [--white-gradient:repeating-linear-gradient(100deg,var(--white)_0%,var(--white)_7%,var(--transparent)_10%,var(--transparent)_12%,var(--white)_16%)]
+            [--dark-gradient:repeating-linear-gradient(100deg,var(--black)_0%,var(--black)_7%,var(--transparent)_10%,var(--transparent)_12%,var(--black)_16%)]
+            [--aurora:repeating-linear-gradient(100deg,var(--blue-500)_10%,var(--indigo-300)_15%,var(--blue-300)_20%,var(--violet-200)_25%,var(--blue-400)_30%)]
+            [background-image:var(--white-gradient),var(--aurora)]
+            dark:[background-image:var(--dark-gradient),var(--aurora)]
+            [background-size:300%,_200%]
+            [background-position:50%_50%,50%_50%]
+            filter blur-[10px] invert dark:invert-0
+            after:content-[] after:absolute after:inset-0 after:[background-image:var(--white-gradient),var(--aurora)] 
+            after:dark:[background-image:var(--dark-gradient),var(--aurora)]
+            after:[background-size:200%,_100%] 
+            after:animate-aurora after:[background-attachment:fixed] after:mix-blend-difference
+            pointer-events-none
+            absolute -inset-[10px] opacity-50 will-change-transform&#96;,
+              showRadialGradient &amp;&amp;
+                &#96;[mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]&#96;
+            )&#125;
+          &gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &#123;children&#125;
+      &lt;/div&gt;
+    &lt;/main&gt;
+  );
+&#125;;
+</code></pre>
+
+  <pre><code>demo.tsx
+&quot;use client&quot;;
+
+import &#123; motion &#125; from &quot;framer-motion&quot;;
+import React from &quot;react&quot;;
+import &#123; AuroraBackground &#125; from &quot;@/components/ui/aurora-background&quot;;
+
+export function AuroraBackgroundDemo() &#123;
+  return (
+    &lt;AuroraBackground&gt;
+      &lt;motion.div
+        initial=&#123; &#123; opacity: 0.0, y: 40 &#125; &#125;
+        whileInView=&#123; &#123; opacity: 1, y: 0 &#125; &#125;
+        transition=&#123; &#123;
+          delay: 0.3,
+          duration: 0.8,
+          ease: &quot;easeInOut&quot;,
+        &#125; &#125;
+        className=&quot;relative flex flex-col gap-4 items-center justify-center px-4&quot;
+      &gt;
+        &lt;div className=&quot;text-3xl md:text-7xl font-bold dark:text-white text-center&quot;&gt;
+          Background lights are cool you know.
+        &lt;/div&gt;
+        &lt;div className=&quot;font-extralight text-base md:text-4xl dark:text-neutral-200 py-4&quot;&gt;
+          And this, is chemical burn.
+        &lt;/div&gt;
+        &lt;button className=&quot;bg-black dark:bg-white rounded-full w-fit text-white dark:text-black px-4 py-2&quot;&gt;
+          Debug now
+        &lt;/button&gt;
+      &lt;/motion.div&gt;
+    &lt;/AuroraBackground&gt;
+  );
+&#125;
+</code></pre>
+
+  <h3>Tailwind-Konfiguration erweitern</h3>
+  <p>Ergänze deine <code>tailwind.config.js</code> um Folgendes:</p>
+  <pre><code>const &#123;
+  default: flattenColorPalette,
+&#125; = require(&quot;tailwindcss/lib/util/flattenColorPalette&quot;);
+
+/** @type &#123;import('tailwindcss').Config&#125; */
+module.exports = &#123;
+  content: [
+    // your paths
+    &quot;./src/**/*.{ts,tsx}&quot;,
+  ],
+  darkMode: &quot;class&quot;,
+  theme: &#123;
+    extend: &#123;
+      animation: &#123;
+        aurora: &quot;aurora 60s linear infinite&quot;,
+      &#125;,
+      keyframes: &#123;
+        aurora: &#123;
+          from: &#123;
+            backgroundPosition: &quot;50% 50%, 50% 50%&quot;,
+          &#125;,
+          to: &#123;
+            backgroundPosition: &quot;350% 50%, 350% 50%&quot;,
+          &#125;,
+        &#125;,
+      &#125;,
+    &#125;,
+  &#125;,
+  plugins: [addVariablesForColors],
+};
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+function addVariablesForColors(&#123; addBase, theme &#125;: any) &#123;
+  let allColors = flattenColorPalette(theme(&quot;colors&quot;));
+  let newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) =&gt; [&#96;--&#36;&#123;key&#125;&#96;, val])
+  );
+
+  addBase(&#123;
+    &quot;:root&quot;: newVars,
+  &#125;);
+}
+</code></pre>
+
+  <h3>Implementation Guidelines</h3>
+  <ol>
+    <li>Analysiere die Komponentenstruktur und alle Abhängigkeiten.</li>
+    <li>Prüfe Props/Argumente und etwaigen internen State.</li>
+    <li>Installiere nötige Provider/Hooks (z. B. ThemeProvider, sofern genutzt).</li>
+    <li>Fragen:
+      <ul>
+        <li>Welche Daten/Props werden an die Komponente übergeben?</li>
+        <li>Gibt es State-Management-Anforderungen?</li>
+        <li>Werden Assets (Bilder, Icons) benötigt?</li>
+        <li>Wie soll die Komponente responsiv reagieren?</li>
+        <li>Wo im App-Layout ist der beste Einsatzort?</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h3>Schritte zur Integration</h3>
+  <ol>
+    <li>Code wie oben in die richtigen Ordner kopieren (insb. <code>/components/ui</code>).</li>
+    <li>Externe Dependencies installieren:
+      <pre><code>npm i tailwindcss postcss autoprefixer framer-motion lucide-react
+npm i -D typescript @types/react @types/node
+# Falls shadcn noch nicht konfiguriert ist:
+npx shadcn@latest init</code></pre>
+    </li>
+    <li>Bild-Assets zunächst mit Unsplash-Stockfotos füllen (Platzhalter).</li>
+    <li><em>lucide-react</em> Icons verwenden, wenn simple SVG-Logos benötigt werden.</li>
+  </ol>
+
+  <h3>Wenn das Projekt shadcn/Tailwind/TS noch nicht hat</h3>
+  <p>Kurzanleitung:</p>
+  <ol>
+    <li><strong>TypeScript</strong>: <code>npm i -D typescript @types/react @types/node</code>, dann <code>tsconfig.json</code> erzeugen (Next.js: via <code>next dev</code> automatisch).</li>
+    <li><strong>Tailwind</strong>: <code>npx tailwindcss init -p</code>, Pfade in <code>tailwind.config.js</code> setzen, <code>globals.css</code> mit Tailwind-Direktiven (<code>@tailwind base; @tailwind components; @tailwind utilities;</code>).</li>
+    <li><strong>shadcn</strong>: <code>npx shadcn@latest init</code>; Standard-Komponentenpfad prüfen. Wenn nicht <code>/components/ui</code>, Ordner anlegen und wegen Konsistenz/Austauschbarkeit dort bündeln.</li>
+  </ol>
+
+  <h3>Standardpfade</h3>
+  <ul>
+    <li>Komponenten: <code>/components/ui</code> (empfohlen für shadcn-Struktur).</li>
+    <li>Styles: <code>/app/globals.css</code> (Next.js) bzw. <code>src/styles/globals.css</code> in CRA/Vite-Varianten.</li>
+  </ul>
+</section>
+
 <hr>
 <footer>
   <p>Diese Seite ist eine einfache, textbasierte Schul-Website ohne Design. Stand: Oktober 2025.</p>
 </footer>
 </body>
 </html>
-
